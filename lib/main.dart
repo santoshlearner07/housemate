@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart'; // we'll create this
+import 'welcome_screen.dart';
 
 void main() {
-  runApp(const HouseMateApp());
+  runApp(const MyApp());
 }
 
-class HouseMateApp extends StatelessWidget {
-  const HouseMateApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'HouseMate',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      home: const HomeScreen(),
+      title: 'House Share Chore App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const WelcomeScreen(),
     );
   }
 }

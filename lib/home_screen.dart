@@ -1,78 +1,60 @@
 import 'package:flutter/material.dart';
+import 'utils/assignment_helper.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  final List<String> roommates;
+  final List<String> chores = [
+    'Clean Kitchen',
+    'Take Out Trash',
+    'Clean Bathroom',
+    'Vacuum Whole house',
+  ];
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+  HomeScreen({super.key, required this.roommates});
 
-class _HomeScreenState extends State<HomeScreen> {
-  final List<String> _chores = [];
-  final TextEditingController _choreController = TextEditingController();
-
-  void _addChore() {
-    final chore = _choreController.text.trim();
-    if (chore.isNotEmpty) {
-      setState(() {
-        _chores.add(chore);
-        _choreController.clear();
-      });
-    }
-  }
-
-  void _deleteChore(int index) {
-    setState(() {
-      _chores.removeAt(index);
-    });
-  }
+  final DateTime startDate = DateTime(2024, 7, 1); // Your chosen start date
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('HouseMate Chores'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _choreController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter a chore (e.g., Clean kitchen)',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _addChore,
-                  child: const Text('Add'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _chores.length,
-                itemBuilder: (context, index) {
-                  return Card(
-                    child: ListTile(
-                      title: Text(_chores[index]),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _deleteChore(index),
-                      ),
-                    ),
-                  );
-                },
+    final assignments = assignChores(
+      chores: chores,
+      roommates: roommates,
+      startDate: startDate,
+    );
+
+    // Show popup only once after build, only on Mondays
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final today = DateTime.now();
+      if (today.weekday == DateTime.tuesday) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Weekly Chores Assigned!"),
+            content: const Text("Check your assigned task below for this week."),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("OK"),
               ),
+            ],
+          ),
+        );
+      }
+    });
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("Weekly Chore Rotation")),
+      body: ListView.builder(
+        itemCount: assignments.length,
+        itemBuilder: (context, index) {
+          final assignment = assignments[index];
+          return Card(
+            child: ListTile(
+              title: Text('${assignment['chore']}'),
+              subtitle: Text('Assigned to: ${assignment['assignedTo']}'),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
