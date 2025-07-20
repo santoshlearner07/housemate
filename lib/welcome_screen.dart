@@ -40,8 +40,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              AdminScreen(roommates: roommates, chores: chores),
+          builder: (context) => AdminScreen(roommates: roommates, chores: chores),
         ),
       );
     } else {
@@ -54,9 +53,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Welcome Admin'),
-      ),
+      appBar: AppBar(title: const Text('Welcome Admin')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(

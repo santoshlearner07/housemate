@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'utils/assignment_helper.dart';
+// import 'utils/assignment_helper.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<String> roommates;

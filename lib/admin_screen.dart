@@ -1,131 +1,126 @@
 import 'package:flutter/material.dart';
 import 'chore_assignment.dart';
 
-class RotatingChore {
-  final String choreName;
-  final List<String> assignedRoommates;
-  final int repeatDays;
-  final DateTime startDate;
-
-  RotatingChore({
-    required this.choreName,
-    required this.assignedRoommates,
-    required this.repeatDays,
-    required this.startDate,
-  });
-
-  List<ChoreInstance> generateSchedule(int numberOfCycles) {
-    List<ChoreInstance> schedule = [];
-    for (int i = 0; i < numberOfCycles; i++) {
-      final person = assignedRoommates[i % assignedRoommates.length];
-      final dueDate = startDate.add(Duration(days: i * repeatDays));
-      schedule.add(ChoreInstance(person, choreName, dueDate));
-    }
-    return schedule;
-  }
-}
-
-class ChoreInstance {
-  final String person;
-  final String chore;
-  final DateTime dueDate;
-
-  ChoreInstance(this.person, this.chore, this.dueDate);
-}
-
 class AdminScreen extends StatefulWidget {
   final List<String> roommates;
   final List<String> chores;
 
-  const AdminScreen({super.key, required this.roommates, required this.chores});
+  const AdminScreen({Key? key, required this.roommates, required this.chores}) : super(key: key);
 
   @override
-  State<AdminScreen> createState() => _AdminScreenState();
+  _AdminScreenState createState() => _AdminScreenState();
 }
 
 class _AdminScreenState extends State<AdminScreen> {
-  String? selectedRoommate;
-  String? selectedChore;
-  int selectedRepeatDays = 7;
+  late List<String> roommates;
+  late List<String> chores;
+  final List<ChoreAssignment> assignments = [];
+  final Map<String, List<DateTime>> assignmentHistory = {};
 
-  List<ChoreAssignment> assignments = [];
+  String selectedChore = '';
+  String selectedRoommate = '';
+  int repeatDays = 7;
 
-  void assignChore() {
-    if (selectedChore != null && selectedRoommate != null) {
-      final assignment = ChoreAssignment(
-        chore: selectedChore!,
-        assignedTo: selectedRoommate!,
-        repeatDays: selectedRepeatDays,
-        nextDueDate: DateTime.now().add(Duration(days: selectedRepeatDays)),
-      );
+  @override
+  void initState() {
+    super.initState();
+    roommates = widget.roommates;
+    chores = widget.chores;
 
-      setState(() {
-        assignments.add(assignment);
-      });
+    if (roommates.isNotEmpty) selectedRoommate = roommates.first;
+    if (chores.isNotEmpty) selectedChore = chores.first;
+
+    for (var name in roommates) {
+      assignmentHistory[name] = [];
     }
   }
 
-  String formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
+  void assignChore() {
+    final today = DateTime.now();
+
+    // Prevent assigning the same person the same task for today
+    if (assignmentHistory[selectedRoommate]?.any((d) =>
+        d.day == today.day && d.month == today.month && d.year == today.year) ??
+        false) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("$selectedRoommate already has this task today!"),
+      ));
+      return;
+    }
+
+    final assignment = ChoreAssignment(
+      chore: selectedChore,
+      repeatDays: repeatDays,
+      nextDueDate: today,
+      rotationList: roommates,
+    );
+
+    assignmentHistory[selectedRoommate]?.add(today);
+
+    setState(() {
+      assignments.add(assignment);
+    });
+  }
+
+  void updateAssignments() {
+    setState(() {
+      for (var assignment in assignments) {
+        assignment.updateNextAssignee();
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin Panel')),
+      appBar: AppBar(title: const Text('Admin Assignment Panel')),
       body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ListView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           children: [
-            const Text("Select Roommate"),
             DropdownButton<String>(
-              isExpanded: true,
-              value: selectedRoommate,
-              hint: const Text("Choose roommate"),
-              onChanged: (value) => setState(() => selectedRoommate = value),
-              items: widget.roommates
-                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                  .toList(),
-            ),
-            const SizedBox(height: 12),
-
-            const Text("Select Chore"),
-            DropdownButton<String>(
-              isExpanded: true,
               value: selectedChore,
-              hint: const Text("Choose chore"),
-              onChanged: (value) => setState(() => selectedChore = value),
-              items: widget.chores
-                  .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                  .toList(),
+              items: chores.map((chore) => DropdownMenuItem(
+                value: chore,
+                child: Text(chore),
+              )).toList(),
+              onChanged: (val) => setState(() => selectedChore = val!),
             ),
-            const SizedBox(height: 12),
-
-            const Text("Repeat every..."),
+            DropdownButton<String>(
+              value: selectedRoommate,
+              items: roommates.map((person) => DropdownMenuItem(
+                value: person,
+                child: Text(person),
+              )).toList(),
+              onChanged: (val) => setState(() => selectedRoommate = val!),
+            ),
             DropdownButton<int>(
-              value: selectedRepeatDays,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => selectedRepeatDays = value);
-                }
-              },
-              items: const [
-                DropdownMenuItem(value: 7, child: Text("7 Days")),
-                DropdownMenuItem(value: 10, child: Text("10 Days")),
-                DropdownMenuItem(value: 15, child: Text("15 Days")),
-              ],
+              value: repeatDays,
+              items: [7, 10, 15].map((days) => DropdownMenuItem(
+                value: days,
+                child: Text('$days Days'),
+              )).toList(),
+              onChanged: (val) => setState(() => repeatDays = val!),
+            ),
+            ElevatedButton(
+              onPressed: assignChore,
+              child: const Text('Assign Chore'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: assignChore,
-              child: const Text("Assign Chore"),
+              onPressed: updateAssignments,
+              child: const Text('Simulate Rotation'),
             ),
-            const Divider(height: 30),
-            const Text("Assigned Chores", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ...assignments.map(
-              (assignment) => ListTile(
-                title: Text("${assignment.chore} ➜ ${assignment.assignedTo}"),
-                subtitle: Text("Repeat every ${assignment.repeatDays} days\nNext due: ${formatDate(assignment.nextDueDate)}"),
+            Expanded(
+              child: ListView.builder(
+                itemCount: assignments.length,
+                itemBuilder: (context, index) {
+                  final a = assignments[index];
+                  return ListTile(
+                    title: Text('${a.chore}'),
+                    subtitle: Text('Assigned to: ${a.assignedTo} | Next due: ${a.nextDueDate.toLocal()}'),
+                  );
+                },
               ),
             ),
           ],
