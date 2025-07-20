@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'welcome_screen.dart';
+import 'role_selection_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,10 +11,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'House Share Chore App',
-      debugShowCheckedModeBanner: false,
+      title: 'Housemate App',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const WelcomeScreen(),
+      home: const RoleSelectionScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
