@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'admin_screen.dart';
+import 'dart:convert'; // Needed for encoding/decoding lists
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -15,12 +17,33 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   List<String> roommates = [];
   List<String> chores = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      roommates = prefs.getStringList('roommates') ?? [];
+      chores = prefs.getStringList('chores') ?? [];
+    });
+  }
+
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('roommates', roommates);
+    await prefs.setStringList('chores', chores);
+  }
+
   void _addRoommate() {
     final name = _roommateController.text.trim();
     if (name.isNotEmpty && !roommates.contains(name)) {
       setState(() {
         roommates.add(name);
         _roommateController.clear();
+        _saveData();
       });
     }
   }
@@ -31,6 +54,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       setState(() {
         chores.add(task);
         _choreController.clear();
+        _saveData();
       });
     }
   }
@@ -40,7 +64,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => AdminScreen(roommates: roommates, chores: chores),
+          builder: (context) =>
+              AdminScreen(roommates: roommates, chores: chores),
         ),
       );
     } else {
